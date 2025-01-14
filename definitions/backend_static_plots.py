@@ -9,7 +9,7 @@ from matplotlib.colors import ListedColormap
 
 from scipy.stats import gaussian_kde
 
-from definitions.backend_calculations import detect_models, extract_results, calc_betainfo_bycluster
+from definitions.backend_calculations import detect_models, extract_results, calc_betainfo_bycluster, fetch_surface
 
 
 # ===== BETA AND CLUSTER LEGENDS FOR APP ==============================================================
@@ -216,19 +216,20 @@ def plot_single_brain(ax, hemi, coord, fig, sign_betas, surf='pial', resol='fsav
     return p
 
 
-def plot_brain_2d(start_folder, outc='SZC', model='Dopamine_SZC', meas='thickness',
-                  title=None, resol='fsaverage5'):
+def plot_brain_2d(start_folder, outc, model, meas, resol='fsaverage5', title=None):
+
     title = f'{model} ({meas})' if title == None else title
+
+    print("Computing figure")
 
     _, _, _, _, _, sign_betas, all_observed_betas = extract_results(start_folder, outc, model, meas)
 
     fig, axs = plt.subplot_mosaic('ABCDD..a.b;EFG.HH.a.b', figsize=(12, 7),
                                   per_subplot_kw={('ABCDEFGH'): {'projection': '3d'}},
-                                  # subplot_kw={'projection': '3d'},
                                   gridspec_kw=dict(wspace=0, hspace=0, width_ratios=[0.19, 0.19, 0.19, 0.02, 0.17,
                                                                                      0.02, 0.08, 0.03, 0.01, 0.1]))
 
-    kargs = dict(sign_betas=sign_betas, fig=fig, surf='pial', resol=resol, cmap='viridis_r')
+    kargs = dict(sign_betas=sign_betas, fig=fig, surf='pial', resol=resol)
     tkargs = dict(ha='center', va='center', style='italic', fontsize=10)
 
     plot_single_brain(axs['A'], 'left', 'lateral', **kargs)
@@ -255,7 +256,7 @@ def plot_brain_2d(start_folder, outc='SZC', model='Dopamine_SZC', meas='thicknes
     axs['E'].set_ylim3d(-128, 50)
     axs['F'].set_ylim3d(-128, 50)
 
-    plot_colorbar(axs['a'], axs['b'], sign_betas, all_observed_betas)
+    plot_beta_colorbar_densityC(axs['a'], axs['b'], sign_betas, all_observed_betas)
 
     # axs['C'].set_ylim3d(-118, 60); # axs['C'].set_zlim3d(-118, 60)
 

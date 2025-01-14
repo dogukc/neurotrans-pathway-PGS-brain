@@ -2,10 +2,12 @@ from shiny import Inputs, Outputs, Session, module, reactive, render, ui
 
 from shinywidgets import output_widget, render_plotly
 
+import io
+
 import definitions.layout_styles as styles
 from definitions.backend_calculations import detect_models, extract_results, compute_overlap
 from definitions.backend_dynamic_plots import plot_surfmap, plot_overlap
-from definitions.backend_static_plots import beta_colorbar_density_figure, clusterwise_means_figure
+from definitions.backend_static_plots import beta_colorbar_density_figure, clusterwise_means_figure, plot_brain_2d
 
 
 @module.ui
@@ -45,9 +47,9 @@ def single_result_ui():
                                                   class_='btn btn-dark action-button'),
                            style='padding-top: 15px')
 
-    download_figure_button = ui.div(ui.input_action_button(id='download_figure_button',
-                                                           label='Download png',
-                                                           class_='btn btn-light action-button'),
+    download_figure_button = ui.div(ui.download_button(id='download_figure_button',
+                                                       label='Download png'),
+                                                       # class_='btn btn-light action-button'),
                                     style='padding-top: 15px')
 
     return ui.div(
@@ -75,7 +77,7 @@ def single_result_ui():
             ui.card('Right hemisphere',
                     output_widget('brain_right'),
                     full_screen=True),
-            ui.output_plot('colorbar_beta_histogram'),
+            ui.output_plot('color_legend'),
             col_widths=(4, 4, 4)
         ))
 
@@ -167,8 +169,20 @@ def update_single_result(input: Inputs, output: Outputs, session: Session,
         return brain['right']
 
     @render.plot(alt="All observed beta values")
-    def colorbar_beta_histogram():
+    def color_legend():
         return single_result_output()[2]
+
+    @render.download(filename="fig.png")
+    def download_figure_button():
+        stat_fig = plot_brain_2d(start_folder=input_resdir(),
+                                 outc=input.select_pheno(),
+                                 model=input.select_model(),
+                                 meas=input.select_measure(),
+                                 resol=input.select_resolution(),
+                                 title=None)
+        with io.BytesIO() as buf:
+            stat_fig.savefig(buf, format="png")
+            yield buf.getvalue()
 
     return input.select_pheno, input.select_model, input.select_measure
 
