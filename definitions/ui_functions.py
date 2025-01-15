@@ -110,46 +110,57 @@ def update_single_result(input: Inputs, output: Outputs, session: Session,
             selected=models[0])  # start_model
 
     @reactive.Calc
-    @reactive.event(input.update_button, ignore_none=False)
+    @reactive.event(input.update_button, ignore_none=True)
     def single_result_output():
+        with ui.Progress(min=1, max=6) as p:
 
-        # Extract results
-        min_beta, max_beta, mean_beta, n_clusters, sign_clusters, sign_betas, all_betas = extract_results(
-            resdir=input_resdir(),
-            group=input.select_pheno(),
-            model=input.select_model(),
-            measure=input.select_measure())
+            p.set(1, message="Loading results...")
 
-        l_nc = int(n_clusters[0])
-        r_nc = int(n_clusters[1])
+            # Extract results
+            min_beta, max_beta, mean_beta, n_clusters, sign_clusters, sign_betas, all_betas = extract_results(
+                resdir=input_resdir(),
+                group=input.select_pheno(),
+                model=input.select_model(),
+                measure=input.select_measure())
 
-        if l_nc == r_nc == 0:
-            info = ui.markdown(
-                f'**0** clusters identified (in the left or the right hemisphere).')
-            brains = {'left': None, 'right': None}
-            legend_plot = None
+            p.set(2, message="Calculating maps...")
 
-        else:
-            info = ui.markdown(
-                f'**{l_nc + r_nc}** clusters identified ({l_nc} in the left and {r_nc} in the right hemisphere).<br />'
-                f'Mean beta value [range] = **{mean_beta:.2f}** [{min_beta:.2f}; {max_beta:.2f}]')
+            l_nc = int(n_clusters[0])
+            r_nc = int(n_clusters[1])
 
-            brains = plot_surfmap(
-                min_beta, max_beta, n_clusters, sign_clusters, sign_betas,
-                surf=input.select_surface(),
-                resol=input.select_resolution(),
-                output=input.select_output())
+            if l_nc == r_nc == 0:
+                info = ui.markdown(
+                    f'**0** clusters identified (in the left or the right hemisphere).')
+                brains = {'left': None, 'right': None}
+                legend_plot = None
 
-            if input.select_output() == 'betas':
-                legend_plot = beta_colorbar_density_figure(sign_betas, all_betas,
-                                                         figsize=(4, 6),
-                                                         colorblind=False,
-                                                         set_range=None)
             else:
-                legend_plot = clusterwise_means_figure(sign_clusters, sign_betas,
-                                                       figsize=(4, 6),
-                                                       cmap=styles.CLUSTER_COLORMAP,
-                                                       tot_clusters=int(n_clusters[0]+n_clusters[1]))
+                info = ui.markdown(
+                    f'**{l_nc + r_nc}** clusters identified ({l_nc} in the left and {r_nc} in the right hemisphere).<br />'
+                    f'Mean beta value [range] = **{mean_beta:.2f}** [{min_beta:.2f}; {max_beta:.2f}]')
+
+                p.set(3, message="Calculating maps...")
+
+                brains = plot_surfmap(
+                    min_beta, max_beta, n_clusters, sign_clusters, sign_betas,
+                    surf=input.select_surface(),
+                    resol=input.select_resolution(),
+                    output=input.select_output())
+
+                p.set(4, message="Rendering brains...")
+
+                if input.select_output() == 'betas':
+                    legend_plot = beta_colorbar_density_figure(sign_betas, all_betas,
+                                                             figsize=(4, 6),
+                                                             colorblind=False,
+                                                             set_range=None)
+                else:
+                    legend_plot = clusterwise_means_figure(sign_clusters, sign_betas,
+                                                           figsize=(4, 6),
+                                                           cmap=styles.CLUSTER_COLORMAP,
+                                                           tot_clusters=int(n_clusters[0]+n_clusters[1]))
+
+                p.set(5, message="...almost done!")
 
         return info, brains, legend_plot
 
@@ -172,7 +183,7 @@ def update_single_result(input: Inputs, output: Outputs, session: Session,
     def color_legend():
         return single_result_output()[2]
 
-    @render.download(filename="fig.png")
+    @render.download(filename=f"Brainmapp_figure.png")
     def download_figure_button():
         stat_fig = plot_brain_2d(start_folder=input_resdir(),
                                  outc=input.select_pheno(),
