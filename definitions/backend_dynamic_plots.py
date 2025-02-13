@@ -3,14 +3,15 @@ import numpy as np
 from nilearn import plotting
 from matplotlib.colors import ListedColormap
 
-from definitions.backend_calculations import fetch_surface, fetch_discr_colormap
+from definitions.backend_calculations import fetch_surface, fetch_discr_colormap, compute_overlap
 import definitions.layout_styles as styles
 
 
 def plot_surfmap(min_beta, max_beta, n_clusters, sign_clusters, sign_betas,
                  surf='pial',  # 'pial', 'infl', 'flat', 'sphere'
                  resol='fsaverage6',
-                 output='betas'):
+                 output='betas',
+                 colorblind=False):
 
     fs_avg, n_nodes = fetch_surface(resol)
 
@@ -71,10 +72,10 @@ def plot_surfmap(min_beta, max_beta, n_clusters, sign_clusters, sign_betas,
                 cmap = 'viridis'
             elif max_val > 0 and min_val > 0:  # all positive associations
                 thresh = min_val
-                cmap = 'viridis_r'
+                cmap = 'viridis_r' if colorblind else 'hot_r'
             else:
                 thresh = np.nanmin(abs(stats_map))
-                cmap = 'viridis'
+                cmap = 'viridis' # TODO: could pick a diverging map for this one instead (rare though)
 
             # cmap = styles.BETA_COLORMAP
 

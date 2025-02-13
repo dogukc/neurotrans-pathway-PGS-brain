@@ -182,7 +182,7 @@ def clusterwise_means_figure(sign_clusters, sign_betas,
 # ===== STATIC BRAIN PLOTS ==============================================================
 
 
-def plot_single_brain(ax, hemi, coord, fig, sign_betas, surf='pial', resol='fsaverage5'):
+def plot_single_brain(ax, hemi, coord, fig, sign_betas, surf='pial', resol='fsaverage5', colorblind=False):
 
     fs_avg, n_nodes = fetch_surface(resol)
 
@@ -197,9 +197,10 @@ def plot_single_brain(ax, hemi, coord, fig, sign_betas, surf='pial', resol='fsav
     if max_sign_beta < 0 and min_sign_beta < 0:  # all negative associations
         cmap = 'viridis'
     elif max_sign_beta > 0 and min_sign_beta > 0:  # all positive associations
-        cmap = 'viridis_r'
+        cmap = 'viridis_r' if colorblind else 'hot_r'
     else:
-        cmap = 'viridis'
+        cmap = 'viridis' # TODO: could pick a diverging map for this one instead (rare though)
+
 
     p = plotting.plot_surf(surf_mesh=fs_avg[f'{surf}_{hemi}'],  # Surface mesh geometry
                            surf_map=stats_map[:n_nodes],  # Statistical map confounder model
@@ -256,7 +257,7 @@ def plot_brain_2d(start_folder, outc, model, meas, resol='fsaverage5', title=Non
     axs['E'].set_ylim3d(-128, 50)
     axs['F'].set_ylim3d(-128, 50)
 
-    plot_beta_colorbar_densityC(axs['a'], axs['b'], sign_betas, all_observed_betas)
+    plot_beta_colorbar_density(axs['a'], axs['b'], sign_betas, all_observed_betas)
 
     # axs['C'].set_ylim3d(-118, 60); # axs['C'].set_zlim3d(-118, 60)
 
